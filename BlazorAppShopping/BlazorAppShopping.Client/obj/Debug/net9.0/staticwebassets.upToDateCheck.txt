@@ -1,0 +1,4 @@
+C:\Users\loannguyent5\dotnet_project\BlazorAppShopping\BlazorAppShopping\BlazorAppShopping.Client\wwwroot\appsettings.json
+C:\Users\loannguyent5\dotnet_project\BlazorAppShopping\BlazorAppShopping\BlazorAppShopping.Client\wwwroot\appsettings.Development.json
+wwwroot\appsettings.Development.json
+wwwroot\appsettings.json
