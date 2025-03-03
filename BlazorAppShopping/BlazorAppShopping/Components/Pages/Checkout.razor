@@ -1,0 +1,190 @@
+﻿@page "/checkout"
+@attribute [Authorize]
+@inject CartService CartService
+@inject IJSRuntime JSRuntime
+@using BlazorAppShopping.Data
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Authorization
+@using System.Text.Json
+@inject CartService CartService
+@inject IJSRuntime JSRuntime
+@inject OrderService OrderService
+@inject CustomerService CustomerService
+@inject NavigationManager NavigationManager
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@rendermode InteractiveServer
+
+<section class="shop_section layout_padding">
+    <div class="container">
+    <div class="row">
+        <div class="col-75">
+                <div class="container-checkout">
+                <EditForm Model="@customer" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row">
+                        <div class="col-50">
+                            <h3>Billing Address</h3>
+                            <label for="fname">Full Name</label>
+                            <InputText id="fname" class="form-control" @bind-Value="customer.FullName" />
+
+                            <label for="fphone">Phone Number</label>
+                            <InputText id="fphone" class="form-control" @bind-Value="customer.PhoneNumber" />
+
+                            <label for="adr">Address</label>
+                            <InputText id="adr" class="form-control" @bind-Value="customer.Address" />
+
+                            <label for="city">City</label>
+                            <InputText id="city" class="form-control" @bind-Value="customer.City" />
+
+                            <div class="row">
+                                <div class="col-50">
+                                    <label for="state">State</label>
+                                    <InputText id="state" class="form-control" @bind-Value="customer.State" />
+                                </div>
+                                <div class="col-50">
+                                    <label for="zip">Zip</label>
+                                    <InputText id="zip" class="form-control" @bind-Value="customer.Zip" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <label for="paymentMethod">Payment Method</label>
+                        <InputSelect id="paymentMethod" class="custom-select" @bind-Value="paymentMethod" @onchange="OnPaymentMethodChange">
+                            @foreach (var method in Enum.GetValues(typeof(PaymentMethod)))
+                                {
+                                    <option value="@method">@method</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block text-uppercase mb-3">Continue to checkout</button>
+                    </EditForm>
+                </div>
+            </div>
+            <div class="col-25">
+                <div class="container-checkout">
+                    <h4>
+                        Cart
+                        <span class="price" style="color:black">
+                            <i class="fa fa-shopping-cart"></i>
+                            <b>@(cartItems?.Count ?? 0)</b>
+                        </span>
+                    </h4>
+
+                    @if (cartItems != null && cartItems.Any())
+                    {
+                        foreach (var item in cartItems)
+                        {
+                            <div class="product-info-cart">
+                                <p><a href="/product-detail/@item.Product.ProductId">@item.Product.Name</a>
+                                    <span class="price">$@item.Product.Price</span>
+                                </p>
+                            </div>
+                        }
+                        <hr />
+                        <p>
+                            Total
+                            <span class="price" style="color:black">
+                                <b>@totalPrice.ToString("C")</b>
+                            </span>
+                        </p>
+                    }
+                    else
+                    {
+                        <p>Your cart is empty.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@code {
+    private PaymentMethod paymentMethod = PaymentMethod.COD;
+    private Customer customer = new Customer();
+    private List<CartItem> cartItems;
+    private decimal totalPrice = 0;
+    protected override async Task OnInitializedAsync()
+    {
+        // Get UserId from authentication
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user.Claims.FirstOrDefault(c => c.Type ==
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            customer = new Customer();
+        }
+        else{
+            customer = await CustomerService.GetCustomerByUserIdAsync(userId) ?? new Customer { UserId = userId };
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (customer.CustomerId == 0)
+        {
+            await CustomerService.AddCustomerAsync(customer);
+        }
+        else
+        {
+            await CustomerService.UpdateCustomerAsync(customer);
+        }
+        //save order
+        await SaveOrder();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/sessionStorageHelper.js");
+            var serializedCart = await module.InvokeAsync<string>("getItem", "cart");
+            if (!string.IsNullOrEmpty(serializedCart))
+            {
+                cartItems = JsonSerializer.Deserialize<List<CartItem>>(serializedCart);
+                totalPrice = cartItems.Sum(item => item.Product.Price * item.Quantity);
+            }
+            StateHasChanged();
+        }
+    }
+
+    private void OnPaymentMethodChange(ChangeEventArgs e)
+    {
+        if (Enum.TryParse(typeof(PaymentMethod), e.Value.ToString(), out var method))
+        {
+            paymentMethod = (PaymentMethod)method;
+        }
+    }
+
+
+    // [JSInvokable("SaveOrder")]
+    public async Task SaveOrder()
+    {
+        string methodName = paymentMethod.ToString();
+        // Get UserId from authentication
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user.Claims.FirstOrDefault(c => c.Type ==
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            Console.Error.WriteLine("User is not authenticated.");
+            return;
+        }
+        // DUMMY TRANSACTION ID
+        Random random = new Random();
+        string transactionId = random.Next(100000, 1000000).ToString();
+        var cartItems = await CartService.GetCartItemsAsync();
+        await OrderService.SaveOrderAsync(userId, cartItems, transactionId, methodName);
+        await CartService.ClearCartAsync();
+        NavigationManager.NavigateTo("/success");
+    }
+}

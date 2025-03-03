@@ -1,0 +1,85 @@
+﻿@page "/order-history"
+@attribute [Authorize]
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject CartService CartService
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Authorization
+@using System.Text.Json
+@rendermode InteractiveServer
+
+@inject OrderService OrderService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@if (orders == null)
+{
+    <p>Loading...</p>
+}
+else if (!orders.Any())
+{
+    <p>You have no orders yet..</p>
+}
+else
+{
+    <section class="shop_section layout_padding">
+    <div class="container">
+            <h2 class="text-2xl font-bold text-center text-gray-800">Order History</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Order Date</th>
+                    <th>Total Price</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in orders)
+                {
+                    <tr>
+                        <td>@order.OrderId</td>
+                        <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                        <td>@order.TotalPrice.ToString("C")</td>
+                        <td>@order.Status</td>
+                        <td>
+                            <button class="btn btn-info" @onclick="() => NavigateToOrderDetails(order.OrderId)">
+                                View Details
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+        </section>
+    }
+
+@code {
+    private List<Order>? orders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user.Claims.FirstOrDefault(c =>
+            c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            orders = await OrderService.GetOrdersByUserAsync(userId);
+        }
+        else
+        {
+            orders = new List<Order>();
+        }
+    }
+
+    private void NavigateToOrderDetails(int orderId)
+    {
+        NavigationManager.NavigateTo($"/order-details/{orderId}");
+    }
+}

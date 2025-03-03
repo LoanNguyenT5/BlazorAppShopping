@@ -1,0 +1,146 @@
+﻿@page "/cart"
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject CartService CartService
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+@using System.Text.Json
+@rendermode InteractiveServer
+
+<div class="cart_section">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                <div class="cart_container">
+                    <!-- Cart Title -->
+                    <div class="cart_title">
+                        Shopping Cart
+                        <small> (@(cartItems.Count) item@(cartItems.Count != 1 ? "s" : "") in your cart)</small>
+                    </div>
+
+                    <!-- Loading or Empty Cart -->
+                    @if (isLoaded == false)
+                    {
+                        <p>Loading cart...</p>
+                    }
+                    else if (cartItems.Count == 0)
+                    {
+                        <p>Your cart is empty.</p>
+                    }
+                    else
+                    {
+                        <!-- Cart Items -->
+                        <div class="cart_items">
+                            <ul class="cart_list">
+                                @foreach (var item in cartItems)
+                                {
+                                    <li class="cart_item clearfix">
+                                        <div class="cart_item_image">
+                                            <img src="@item.Product.ImageURL" alt="@item.Product.Name" />
+                                        </div>
+                                        <div class="cart_item_info d-flex flex-md-row flex-column justify-content-between">
+                                            <div class="cart_col_name">
+                                                <div class="cart_item_title">Name</div>
+                                                <div class="cart_item_text">@item.Product.Name</div>
+                                            </div>
+                                            <div class="cart_col_quantity">
+                                                <div class="cart_item_title">Quantity</div>
+                                                <div class="cart_item_text">
+                                                    <input style="width: 50px;" type="number" value="@item.Quantity" min="1" @onchange="e => UpdateQuantity(item.Product.ProductId, e.Value.ToString())" />
+                                                </div>
+                                            </div>
+                                            <div class="cart_col_price">
+                                                <div class="cart_item_title">Price</div>
+                                                <div class="cart_item_text">@item.Product.Price.ToString("C")</div>
+                                            </div>
+                                            <div class="cart_col_total">
+                                                <div class="cart_item_title">Total</div>
+                                                <div class="cart_item_text">@((item.Product.Price * item.Quantity).ToString("C"))</div>
+                                            </div>
+                                            <div class="cart_col_remove">
+                                                <button @onclick="() => RemoveFromCart(item.Product.ProductId)" class="button cart_button_clear">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+
+                        <!-- Order Total -->
+                        <div class="order_total">
+                            <div class="order_total_content text-md-right">
+                                <div class="order_total_title">Order Total:</div>
+                                <div class="order_total_amount">
+                                    @cartItems.Sum(item => item.Product.Price * item.Quantity).ToString("C")
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cart Buttons -->
+                        <div class="cart_buttons">
+                            <button type="button" class="button cart_button_clear" @onclick="GoShopping">
+                                Go Shopping
+                            </button>
+                            <button type="button" @onclick="Checkout" class="button cart_button_checkout">
+                                Checkout
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<CartItem> cartItems = new List<CartItem>();
+    private bool isLoaded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            cartItems = await CartService.GetCartItemsAsync();
+            isLoaded = true;
+            StateHasChanged(); 
+        }
+    }
+
+    private async Task UpdateQuantity(int productId, string value)
+    {
+        if (int.TryParse(value, out int quantity) && quantity > 0)
+        {
+            var item = cartItems.FirstOrDefault(i => i.Product.ProductId == productId);
+            if (item != null)
+            {
+                item.Quantity = quantity;
+                await CartService.AddToCartAsync(item.Product, item.Quantity); 
+                StateHasChanged(); 
+            }
+        }
+    }
+
+    private async Task RemoveFromCart(int productId)
+    {
+        await CartService.RemoveFromCartAsync(productId);
+        cartItems = await CartService.GetCartItemsAsync();
+        StateHasChanged(); 
+    }
+
+    private async Task GoShopping()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async Task Checkout()
+    {
+
+        var serializedCart = JsonSerializer.Serialize(cartItems);
+        var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/sessionStorageHelper.js");
+        await module.InvokeVoidAsync("setItem", "cart", serializedCart);
+        NavigationManager.NavigateTo("/checkout");
+    }
+}

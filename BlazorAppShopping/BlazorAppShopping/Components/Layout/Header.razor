@@ -10,7 +10,28 @@
     <meta name="keywords" content="" />
     <meta name="description" content="" />
     <meta name="author" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@1.5.0/dist/flowbite.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet">
+
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome CSS -->
+    <link href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="css/cart-styles.css">
+    <link rel="stylesheet" href="css/checkout-css.css">
     <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon">
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
     <title>
         Giftos
@@ -26,6 +47,15 @@
     <link href="css/style.css" rel="stylesheet" />
     <!-- responsive style -->
     <link href="css/responsive.css" rel="stylesheet" />
+    <!-- JavaScript SDK của PayPal -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AWea2gnSojv3kkNOXdVWGzblzmDjdD-cRt3j1nsKaQ-EN8KRaEERM1xeIeWKxslRFpzaGEz98I2OFhAM&currency=USD"></script>
+    
+    <script src="js/sessionStorageHelper.js"></script>
+
+    <!--Admin page-->
+
+    <link rel="stylesheet" href="admin/css/product.css">
+    <link rel="stylesheet" href="admin/css/templatemo-style.css">
 </head>
 
 <div class="hero_area">
@@ -43,11 +73,24 @@
 
             <div class="collapse navbar-collapse innerpage_navbar" id="navbarSupportedContent">
                 <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                            Home
-                        </NavLink>
-                    </li>
+                    <AuthorizeView Roles="Admin">
+                        <li class="nav-item">
+                                <NavLink class="nav-link" href="/admin">
+                                    Admin Page
+                                </NavLink>
+                        </li>
+
+                    </AuthorizeView>
+                    <AuthorizeView Roles="User">
+                        <Authorized>
+                            <li class="nav-item">
+                                <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                                    Home
+                                </NavLink>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+                    
                     @* <li class="nav-item"> *@
                     @*     <NavLink class="nav-link" href="/shop"> *@
                     @*         Shop *@
@@ -71,6 +114,7 @@
                 </ul>
 
                 <div class="user_option">
+                    
                     <AuthorizeView>
                         <Authorized>
                             <a href="Account/Manage">
@@ -80,7 +124,7 @@
                             <form action="Account/Logout" method="post">
                                 <AntiforgeryToken />
                                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                                <button type="submit" class="btn btn-link nav-link">
+                                <button type="submit" class="btn-link nav-link">
                                     Logout
                                 </button>
                             </form>
@@ -90,18 +134,28 @@
                                 <i class="fa fa-user" aria-hidden="true"></i>
                                 <span>Login</span>
                             </a>
+
                         </NotAuthorized>
                     </AuthorizeView>
+                    <AuthorizeView Roles="User" Context="authContext">
+                        <Authorized>
+                            <a href="/cart">
+                                <i class="fa fa-shopping-bag" aria-hidden="true"></i>
+                            </a>
 
-                    <a href="/cart">
-                        <i class="fa fa-shopping-bag" aria-hidden="true"></i>
-                    </a>
+                            <EditForm Model="searchModel" method="post" OnValidSubmit="OnSearch" FormName="search" class="form-inline">
+                                <InputText @bind-Value="searchModel.SearchTerm" id="search" placeholder="Search.. " style="width: 100px;"/>
+                                <button class="btn nav_search-btn" type="submit">
+                                    <i class="fa fa-search" aria-hidden="true" style="padding-left: 10px;"></i>
+                                </button>
+                            </EditForm>
 
-                    <form class="form-inline">
-                        <button class="btn nav_search-btn" type="submit">
-                            <i class="fa fa-search" aria-hidden="true"></i>
-                        </button>
-                    </form>
+                        </Authorized>
+                       
+                    </AuthorizeView>
+                    
+
+                   
                 </div>
             </div>
         </nav>
@@ -110,6 +164,21 @@
 </div>
 
 @code {
+    [SupplyParameterFromForm]
+    private SearchModel searchModel { get; set; } = new();
+
+    private void OnSearch()
+    {
+        var encodedSearchTerm = Uri.EscapeDataString(searchModel.SearchTerm);
+        NavigationManager.NavigateTo($"/?search={encodedSearchTerm}");
+    }
+
+    private sealed class SearchModel
+    {
+        public string SearchTerm { get; set; } = "";
+
+    }
+
     private string? currentUrl;
 
     protected override void OnInitialized()

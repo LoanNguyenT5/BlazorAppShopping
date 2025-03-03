@@ -1,0 +1,114 @@
+﻿@page "/product"
+@page "/product/{productId:int}"
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Authorization
+@inject NavigationManager NavigationManager
+
+@rendermode InteractiveServer
+@inject CategoryService CategoryService
+@inject ProductService ProductService
+@attribute [Authorize(Roles = "Admin")]
+
+<div class="container tm-mt-big tm-mb-big">
+    <div class="row">
+        <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+            <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+                <div class="row">
+                    <div class="col-12">
+                        <h2 class="tm-block-title d-inline-block">@(isEditMode ? "Edit Product" : "Add Product")</h2>
+                    </div>
+                </div>
+                <div class="row tm-edit-product-row">
+                    <div class="col-12">
+                        <EditForm Model="newProduct" OnValidSubmit="HandleValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="form-group mb-3">
+                                <label for="name">Product Name</label>
+                                <InputText id="name" class="form-control validate" @bind-Value="newProduct.Name" required />
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="description">Description</label>
+                                <InputTextArea id="description" class="form-control validate" @bind-Value="newProduct.Description" rows="3" required />
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="category">Category</label>
+                                <InputSelect id="category" class="custom-select" @bind-Value="newProduct.CategoryId">
+                                    @foreach (var category in categories)
+                                    {
+                                        <option value="@category.CategoryId">@category.CategoryName</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                             <div class="form-group mb-3">
+                                <label for="Price">Price</label>
+                            <InputNumber id="Price" class="form-control validate" @bind-Value="newProduct.Price" required />
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="image">Image URL</label>
+                                <InputText id="ImageURL" class="form-control validate" @bind-Value="newProduct.ImageURL" required />
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="StockQuantity">Stock Quantity</label>
+                                <InputNumber id="StockQuantity" class="form-control validate" @bind-Value="newProduct.StockQuantity" required />
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block text-uppercase">@buttonText</button>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? productId { get; set; }
+    private Product newProduct = new Product();
+    private List<Category> categories = new List<Category>();
+    private bool isEditMode => productId.HasValue;
+    private string buttonText => isEditMode ? "Update Product" : "Add Product";
+    protected override async Task OnInitializedAsync()
+    {
+        if (productId.HasValue)
+        {
+            var existingProduct = await ProductService.GetProductByIdAsync(productId.Value);
+            if (existingProduct != null)
+            {
+                newProduct = existingProduct;
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/admin");
+            }
+        }
+        else
+        {
+            newProduct = new Product();
+        }
+
+        categories = await CategoryService.GetCategoriesAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (isEditMode)
+        {
+            await ProductService.UpdateProductAsync(newProduct);
+        }
+        else
+        {
+            await ProductService.AddProductAsync(newProduct);
+        }
+        NavigationManager.NavigateTo("/admin");
+        
+    }
+
+}

@@ -1,0 +1,210 @@
+﻿@page "/checkout-2"
+@attribute [Authorize]
+@inject CartService CartService
+@inject IJSRuntime JSRuntime
+@using BlazorAppShopping.Data
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Authorization
+@using System.Text.Json
+@inject CartService CartService
+@inject IJSRuntime JSRuntime
+@inject OrderService OrderService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@rendermode InteractiveServer
+
+<div class="container py-5">
+    <!-- For demo purpose -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="display-6">Confirm Payment</h2>
+        </div>
+    </div> <!-- End -->
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card ">
+                <div class="card-header">
+                    <div class="bg-white shadow-sm pt-4 pl-2 pr-2 pb-2">
+                        <!-- Credit card form tabs -->
+                        <ul role="tablist" class="nav bg-light nav-pills rounded nav-fill mb-3">
+                            <li class="nav-item">
+                                <a data-toggle="pill" href="#paypal" class="nav-link active ">
+                                    <i class="fab fa-paypal mr-2"></i> Paypal
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a data-toggle="pill" href="#net-banking" class="nav-link ">
+                                    <i class="fas fa-mobile-alt mr-2"></i> Net Banking
+                                </a>
+                            </li>
+                        </ul>
+                    </div> <!-- End -->
+                    <!-- Credit card form content -->
+                    <div class="tab-content">
+                        <!-- credit card info-->
+
+                    </div> <!-- End -->
+                    <!-- Paypal info -->
+                    <div id="paypal" class="tab-pane show active fade pt-3">
+
+                        <div class="container">
+                            @* <h3> *@
+                                @* Cart *@
+                                @* <span class="price" style="color:forestgreen"> *@
+                                    @* <i class="fa fa-shopping-cart"></i> *@
+                                    @* <b>@(cartItems?.Count ?? 0)</b> *@
+                                    @* </span> *@
+                                @* </h3> *@
+                            @* <h3> *@
+                            @*     Your Cart Detail *@
+                            @* </h3> *@
+                            @if (cartItems != null && cartItems.Any())
+                            {
+                                foreach (var item in cartItems)
+                                {
+                                    <div class="product-info-cart">
+                                        <div class="product-name">
+                                            <a href="/product-detail/@item.Product.ProductId">@item.Product.Name</a>
+                                        </div>
+                                        <div class="product-price">
+                                            <span class="price">$@item.Product.Price</span>
+                                        </div>
+                                    </div>
+
+                                }
+                                <hr />
+                                <p>
+                                    Total
+                                    <span id="amount" class="price" style="color:black">
+                                        <b>@totalPrice.ToString("C")</b>
+                                    </span>
+                                </p>
+                            }
+                            else
+                            {
+                                <p>Your cart is empty.</p>
+                            }
+                        </div>
+                        <div id="paypal-button-container"></div>
+                        <button type="button" @onclick='() => SaveOrder("COD")' class="button cart_button_checkout">
+                            SaveOrder
+                        </button>
+
+                    </div> <!-- End -->
+                    <!-- bank transfer info -->
+                    <div id="net-banking" class="tab-pane fade pt-3">
+                        <div class="form-group ">
+                            @* <label for="Select Your Bank"> *@
+                            @*     <h6>Select your Bank</h6> *@
+                            @* </label> <select class="form-control" id="ccmonth"> *@
+                            @*     <option value="" selected disabled>--Please select your Bank--</option> *@
+                            @*     <option>Bank 1</option> *@
+                            @*     <option>Bank 2</option> *@
+
+                            @* </select> *@
+                        @* <InputText placeholder="Address" /> *@
+                            <label for="Address" class="form-label">Address</label>
+                        </div>
+                        <div class="form-group">
+                            <p>
+                                <button type="button" class="btn btn-primary" @onclick='() => SaveOrder("COD")'>
+                                    <i class="fas fa-mobile-alt mr-2"></i>
+                                    Proceed Payment
+                                </button>
+                            </p>
+                        </div>
+                        <p class="text-muted">
+                            Note: After clicking on the button, you will be directed to a secure
+                            gateway for payment. After completing the payment process, you will be redirected back
+                            to the website to view details of your order.
+                        </p>
+                    </div> <!-- End -->
+                    <!-- End -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    paypal.Buttons({
+        createOrder: function (data, actions) {
+            let amountElement = document.getElementById("amount");
+            let amountText = amountElement.innerText || amountElement.textContent;
+            let amount = parseFloat(amountText.replace(/[^0-9.-]+/g, ""));
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: amount,
+                        currency_code: 'USD'
+                    }
+                }]
+            });
+        },
+        onApprove: async function (data, actions) {
+            try {
+                const details = await actions.order.capture();
+                const transactionId = details.id;
+
+                // await DotNet.invokeMethodAsync('BlazorAppShopping', 'SaveOrder');
+
+                window.location.href = "/order-history";
+            } catch (error) {
+               
+                window.location.href = "/error";
+            }
+        },
+        onError: function (err) {
+            window.location.href = "/error";
+        }
+    }).render('#paypal-button-container');
+
+</script>
+
+@code {
+
+    private List<CartItem> cartItems;
+    private decimal totalPrice = 0;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Get data from sessionStorage
+            var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/sessionStorageHelper.js");
+            var serializedCart = await module.InvokeAsync<string>("getItem", "cart");
+            if (!string.IsNullOrEmpty(serializedCart))
+            {
+                cartItems = JsonSerializer.Deserialize<List<CartItem>>(serializedCart);
+                totalPrice = cartItems.Sum(item => item.Product.Price * item.Quantity);
+            }
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable("SaveOrder")]
+    public async Task SaveOrder(String paymentMethod)
+    {
+        var paymentMethodTmp = "Paypal";
+        if ("COD".Equals(paymentMethod)) {
+            paymentMethodTmp = "COD";
+        }
+        // Get UserId from authentication
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user.Claims.FirstOrDefault(c => c.Type ==
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            Console.Error.WriteLine("User is not authenticated.");
+            return;
+        }
+
+        var cartItems = await CartService.GetCartItemsAsync();
+        await OrderService.SaveOrderAsync(userId, cartItems, "transactionId", paymentMethodTmp);
+        await CartService.ClearCartAsync();
+    }
+}

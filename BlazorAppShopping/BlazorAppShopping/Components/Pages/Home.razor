@@ -1,324 +1,131 @@
 ﻿@page "/"
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject ProductService ProductService
+@inject CartService CartService
 
-<PageTitle>Home</PageTitle>
-
-
-
-<body>
-  <!-- shop section -->
-
-  <section class="shop_section layout_padding">
+<section class="shop_section layout_padding">
     <div class="container">
-      <div class="heading_container heading_center">
-        <h2>
-          Latest Products
-        </h2>
-      </div>
-      <div class="row">
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p1.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Ring
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $200
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
+        <div class="heading_container heading_center">
+            <h2>
+                Latest Products
+            </h2>
         </div>
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p2.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Watch
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $300
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p3.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Teddy Bear
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $110
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p4.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Flower Bouquet
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $45
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p5.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Teddy Bear
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $95
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p6.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Flower Bouquet
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $70
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p7.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Watch
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $400
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="box">
-            <a href="">
-              <div class="img-box">
-                <img src="images/p8.png" alt="">
-              </div>
-              <div class="detail-box">
-                <h6>
-                  Ring
-                </h6>
-                <h6>
-                  Price
-                  <span>
-                    $450
-                  </span>
-                </h6>
-              </div>
-              <div class="new">
-                <span>
-                  New
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-      </div>
-      <div class="btn-box">
-        <a href="">
-          View All Products
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- end shop section -->
-
-  <!-- info section -->
-
-  <section class="info_section  layout_padding2-top">
-    <div class="social_container">
-      <div class="social_box">
-        <a href="">
-          <i class="fa fa-facebook" aria-hidden="true"></i>
-        </a>
-        <a href="">
-          <i class="fa fa-twitter" aria-hidden="true"></i>
-        </a>
-        <a href="">
-          <i class="fa fa-instagram" aria-hidden="true"></i>
-        </a>
-        <a href="">
-          <i class="fa fa-youtube" aria-hidden="true"></i>
-        </a>
-      </div>
-    </div>
-    <div class="info_container ">
-      <div class="container">
         <div class="row">
-          <div class="col-md-6 col-lg-3">
-            <h6>
-              ABOUT US
-            </h6>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed doLorem ipsum dolor sit amet, consectetur adipiscing elit, sed doLorem ipsum dolor sit amet,
-            </p>
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <div class="info_form ">
-              <h5>
-                Newsletter
-              </h5>
-              <form action="#">
-                <input type="email" placeholder="Enter your email">
-                <button>
-                  Subscribe
-                </button>
-              </form>
-            </div>
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <h6>
-              NEED HELP
-            </h6>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed doLorem ipsum dolor sit amet, consectetur adipiscing elit, sed doLorem ipsum dolor sit amet,
-            </p>
-          </div>
-          <div class="col-md-6 col-lg-3">
-            <h6>
-              CONTACT US
-            </h6>
-            <div class="info_link-box">
-              <a href="">
-                <i class="fa fa-map-marker" aria-hidden="true"></i>
-                <span> Gb road 123 london Uk </span>
-              </a>
-              <a href="">
-                <i class="fa fa-phone" aria-hidden="true"></i>
-                <span>+01 12345678901</span>
-              </a>
-              <a href="">
-                <i class="fa fa-envelope" aria-hidden="true"></i>
-                <span> demo@gmail.com</span>
-              </a>
-            </div>
-          </div>
+            @if (products == null)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                @foreach (var product in products)
+                {
+                    <div class="col-sm-6 col-md-4 col-lg-3">
+                        <div class="box">
+                            @* <a href="/product-detail/@product.ProductId"> *@
+                            <div class="img-box" @onclick="() => NavToProductDetail(product.ProductId)">
+                                    <img src="@product.ImageURL" alt="@product.Name" />
+                                </div>
+                                <div class="detail-box">
+                                    <h6>@product.Name</h6>
+                                    <h6>
+                                        Price
+                                        <span>
+                                            @product.Price.ToString("C")
+                                        </span>
+                                    </h6>
+                                </div>
+                                <div class="new">
+                                    <span @onclick="() => AddToCart(product)">
+                                        Cart
+                                    </span>
+                                </div>
+                            @* </a> *@
+                        </div>
+                    </div>
+                }
+            }
         </div>
-      </div>
+
+
+        <!-- Pagination -->
+        <div class="btn-box">
+            <button @onclick="PreviousPage" disabled="@(currentPage == 1)">Previous &laquo;</button>
+            <span>Page @currentPage of @totalPages &laquo;</span>
+            <button @onclick="NextPage" disabled="@(currentPage == totalPages)">Next &raquo</button>
+        </div>
     </div>
-    <!-- footer section -->
-    <footer class=" footer_section">
-      <div class="container">
-        <p>
-          &copy; <span id="displayYear"></span> All Rights Reserved By
-          <a href="https://html.design/">Free Html Templates</a>
-        </p>
-      </div>
-    </footer>
-    <!-- footer section -->
+</section>
 
-  </section>
+@code {
+    [Parameter]
+    public Product Product { get; set; }
+    private List<Product> products;
+    private int currentPage = 1;
+    private int pageSize = 8; 
+    private int totalCount;
+    private int totalPages;
+    private string? searchTerm;
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        searchTerm = queryParams["search"];
 
-  <!-- end info section -->
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            var result = await ProductService.GetProductsAsync(currentPage, pageSize, searchTerm);
+            products = result.Products;
+            totalCount = result.TotalCount;
+            totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        } else{
+            await LoadProducts();
+        }
+        
+    }
 
+    private async Task LoadProducts()
+    {
+        var result = await ProductService.GetProductsAsync(currentPage, pageSize);
+        products = result.Products;
+        totalCount = result.TotalCount;
+        totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+    }
 
-  <script src="js/jquery-3.4.1.min.js"></script>
-  <script src="js/bootstrap.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js">
-  </script>
-  <script src="js/custom.js"></script>
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadProducts();
+        }
+    }
 
-</body>
+    private async Task NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            await LoadProducts();
+        }
+    }
+
+    private async Task AddToCart(Product product)
+    {
+        if (product == null)
+        {
+            Console.WriteLine("Product is null");
+            return;
+        }
+
+        await CartService.AddToCartAsync(product);
+        NavigationManager.NavigateTo("/cart");
+    }
+    private async Task NavToProductDetail(int productId)
+    {
+        NavigationManager.NavigateTo($"/product-detail/{productId}");
+    }
+}

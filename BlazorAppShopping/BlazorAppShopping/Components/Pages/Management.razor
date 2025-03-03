@@ -1,0 +1,277 @@
+﻿@page "/admin"
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Authorization
+@rendermode InteractiveServer
+@inject CategoryService CategoryService
+@inject ProductService ProductService
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin")]
+
+    <div class="container mt-5">
+      <div class="row tm-content-row">
+        <div class="col-sm-12 col-md-12 col-lg-8 col-xl-8 tm-block-col">
+          <div class="tm-bg-primary-dark tm-block tm-block-products">
+                <h2 class="tm-block-title">Products</h2>
+            <div>
+              <table class="table table-hover tm-table-small tm-product-table">
+                <thead>
+                  <tr>
+                    <th scope="col">PRODUCT NAME</th>
+                    <th scope="col">UNIT PRICE</th>
+                    <th scope="col">IN STOCK</th>
+                    <th scope="col">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                            @foreach (var product in products)
+                            {
+                                <tr @onclick="() => NavigateToEditProduct(product.ProductId)" style="cursor: pointer;">
+                                    <td class="tm-product-name">@product.Name</td>
+                                    <td>@product.Price.ToString("C")</td>
+                                    <td>@product.StockQuantity</td>
+                                    <td>
+                                        <a href="#" class="tm-product-delete-link" @onclick="() => DeleteProduct(product.ProductId)">
+                                            <i class="far fa-trash-alt tm-product-delete-icon"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+                <!-- table container -->
+                <!-- Pagination -->
+                <div class="btn-box">
+                    <button @onclick="PreviousPage" disabled="@(currentPage == 1)">Previous &laquo;</button>
+                    <span>Page @currentPage of @totalPages &laquo;</span>
+                    <button @onclick="NextPage" disabled="@(currentPage == totalPages)">Next &raquo</button>
+                </div>
+                <br />
+                <a href="/product" class="btn btn-primary btn-block text-uppercase mb-3">Add new product</a>
+
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-12 col-lg-4 col-xl-4 tm-block-col">
+            <div class="tm-bg-primary-dark tm-block tm-block-product-categories">
+                <h2 class="tm-block-title">Categories</h2>
+                <div>
+                    <table class="table tm-table-small tm-product-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">CATEGORY NAME</th>
+                                <th scope="col">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (categories == null || categories.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="2">No categories available.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var category in categories)
+                                {
+                                    <tr>
+                                        <td class="tm-product-name" @onclick="() => EditCategory(category)">@category.CategoryName</td>
+                                        <td>
+
+                                            <button class="tm-product-delete-link" @onclick="() => DeleteCategory(category.CategoryId)"><i class="far fa-trash-alt tm-product-delete-icon"></i></button>
+
+                                        </td>
+
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination -->
+                <div class="btn-box">
+                    <button @onclick="PreviousPageCategory" disabled="@(currentPageCategory == 1)">Previous &laquo;</button>
+                    <span>Page @currentPageCategory of @totalPages &laquo;</span>
+                    <button @onclick="NextPageCategory" disabled="@(currentPageCategory == totalPagesCategory)">Next &raquo</button>
+                </div>
+
+                <br />
+                <!-- table container -->
+                <EditForm Model="categoryToEdit" OnValidSubmit="SaveCategory" FormName="CategoryForm">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div>
+                        <button type="button">Create Category</button>
+                        <InputText placeholder="Enter Name Category"  id="CategoryName" class="form-control" @bind-Value="categoryToEdit.CategoryName" />
+                    </div>
+                    <br />
+                    <button type="submit" class="btn btn-primary btn-block text-uppercase mb-3">
+                        Save category
+                    </button>
+
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Product
+    [Parameter]
+    public Product Product { get; set; }
+    private List<Product> products = new List<Product>();
+    private int currentPage = 1;
+    private int pageSize = 7;
+    private int totalCount;
+    private int totalPages;
+
+    // Category
+    private EditContext editContext;
+    private int currentPageCategory = 1;
+    private int pageSizeCategory = 3;
+    private int totalCountCategory;
+    private int totalPagesCategory;
+
+    private Category categoryToEdit { get; set; } = new Category();
+    protected override void OnInitialized() => categoryToEdit ??= new();
+
+    private List<Category> categories = new List<Category>();
+
+    // Initialize the page
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+        await LoadCategories();
+    }
+
+    // Product Management
+    private async Task LoadProducts()
+    {
+        var result = await ProductService.GetProductsAsync(currentPage, pageSize);
+        products = result.Products;
+        totalCount = result.TotalCount;
+        totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadProducts();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            await LoadProducts();
+        }
+    }
+
+    private async Task DeleteProduct(int ProductId)
+    {
+
+        await ProductService.DeleteProductAsync(ProductId);
+        await LoadProducts();
+    }
+
+
+    // Category Management
+    private async Task LoadCategories()
+    {
+        var result = await CategoryService.GetCategoriesAsync(currentPageCategory, pageSizeCategory);
+        categories = result.Categories;
+        totalCountCategory = result.TotalCount;
+        totalPagesCategory = (int)Math.Ceiling(totalCountCategory / (double)pageSizeCategory);
+    }
+
+    private async Task PreviousPageCategory()
+    {
+        if (currentPageCategory > 1)
+        {
+            currentPageCategory--;
+            await LoadCategories();
+        }
+    }
+
+    private async Task NextPageCategory()
+    {
+        if (currentPageCategory < totalPagesCategory)
+        {
+            currentPageCategory++;
+            await LoadCategories();
+        }
+    }
+
+
+    private void CreateCategory()
+    {
+
+        categoryToEdit = new Category();
+    }
+
+    private void EditCategory(Category category)
+    {
+        Console.WriteLine("Edit Category");
+        categoryToEdit = new Category
+            {
+                CategoryId = category.CategoryId,
+                CategoryName = category.CategoryName
+            };
+    }
+
+    private async Task DeleteCategory(int categoryId)
+    {
+        
+        await CategoryService.DeleteCategoryAsync(categoryId);
+        await LoadCategories();
+    }
+
+    private async Task SaveCategory()
+    {
+        if (string.IsNullOrWhiteSpace(categoryToEdit?.CategoryName))
+        {
+            return;
+        }
+
+        try
+        {
+            if (categoryToEdit.CategoryId == 0)
+            {
+                await CategoryService.AddCategoryAsync(categoryToEdit);
+            }
+            else
+            {
+               
+                var categoryToUpdate = new Category
+                    {
+                        CategoryId = categoryToEdit.CategoryId,
+                        CategoryName = categoryToEdit.CategoryName
+                    };
+                await CategoryService.UpdateCategoryAsync(categoryToUpdate);
+            }
+
+            categoryToEdit = new Category();
+            await LoadCategories();
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving category: {ex.Message}");
+        }
+    }
+
+    private void NavigateToEditProduct(int productId)
+    {
+        Navigation.NavigateTo($"/product/{productId}");
+    }
+   
+}

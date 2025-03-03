@@ -1,0 +1,73 @@
+﻿@page "/product-detail/{productId:int}"
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject ProductService ProductService
+
+@inject CartService CartService
+@using BlazorAppShopping.Service
+@using BlazorAppShopping.Entities
+@using System.Diagnostics
+
+@using System.Text.Json
+@rendermode InteractiveServer
+
+
+<section class="shop_section layout_padding">
+    <div class="container">
+        @if (product == null)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            <div class="wrapper">
+                <div class="product-img">
+                    <img src="@product.ImageURL">
+                </div>
+                <div class="product-info">
+                    <div class="product-text">
+                        <h1>@product.Category.CategoryName</h1>
+                        <h2>Price: @product.Price.ToString("C")</h2>
+                        <p>@product.Description</p>
+                    </div>
+                    <div class="product-price-btn">
+                       
+                        <button type="button" @onclick="() => AddToCart(product)">buy now</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public int productId { get; set; }
+
+    public Product product { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            product = await ProductService.GetProductByIdAsync(productId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching product: {ex.Message}");
+            NavigationManager.NavigateTo("/error");
+        }
+    }
+    private async Task AddToCart(Product product)
+    {
+        if (product == null)
+        {
+            Console.WriteLine("Product is null");
+            return;
+        }
+
+        await CartService.AddToCartAsync(product);
+        NavigationManager.NavigateTo("/cart");
+    }
+   
+}
